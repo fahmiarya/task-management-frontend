@@ -1,5 +1,4 @@
 'use client';
-import { ClerkProvider } from '@clerk/nextjs';
 import React from 'react';
 import { ActiveThemeProvider } from '../themes/active-theme';
 import QueryProvider from './query-provider';
@@ -14,7 +13,7 @@ export default function Providers({
   return (
     <>
       <ActiveThemeProvider initialTheme={activeThemeValue}>
-        <ClerkProvider
+        {/* <ClerkProvider
           appearance={{
             variables: {
               colorPrimary: 'var(--primary)',
@@ -31,9 +30,9 @@ export default function Providers({
               fontFamily: 'var(--font-sans)'
             }
           }}
-        >
-          <QueryProvider>{children}</QueryProvider>
-        </ClerkProvider>
+        > */}
+        <QueryProvider>{children}</QueryProvider>
+        {/* </ClerkProvider> */}
       </ActiveThemeProvider>
     </>
   );

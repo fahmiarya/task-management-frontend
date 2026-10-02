@@ -1,4 +1,5 @@
 'use client';
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
@@ -24,11 +25,10 @@ import {
   SidebarMenuSubItem,
   SidebarRail
 } from '@/components/ui/sidebar';
-import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { useClerk, useOrganization, useUser } from '@clerk/nextjs';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
+import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -37,30 +37,41 @@ import { OrgSwitcher } from '../org-switcher';
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { isOpen } = useMediaQuery();
-  const { user } = useUser();
-  const { organization } = useOrganization();
-  const { signOut } = useClerk();
   const router = useRouter();
+  const { isOpen } = useMediaQuery();
+
+  const user = useAuthStore((state) => state.user);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
   const filteredGroups = useFilteredNavGroups(navGroups);
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes
   }, [isOpen]);
 
+  const handleSignOut = () => {
+    clearAuth();
+    router.push('/auth/sign-in');
+  };
+
   return (
     <Sidebar collapsible='icon'>
+      {/* Organization / Project Switcher */}
       <SidebarHeader className='group-data-[collapsible=icon]:pt-4'>
         <OrgSwitcher />
       </SidebarHeader>
+
+      {/* Navigation */}
       <SidebarContent className='overflow-x-hidden'>
         {filteredGroups.map((group) => (
           <SidebarGroup key={group.label || 'ungrouped'} className='py-0'>
             {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
+
             <SidebarMenu>
               {group.items.map((item) => {
                 const Icon = item.icon ? Icons[item.icon] : Icons.logo;
-                return item?.items && item?.items?.length > 0 ? (
+
+                return item.items && item.items.length > 0 ? (
                   <Collapsible
                     key={item.title}
                     defaultOpen={item.isActive}
@@ -76,12 +87,15 @@ export default function AppSidebar() {
                       }
                     >
                       {item.icon && <Icon />}
+
                       <span>{item.title}</span>
+
                       <Icons.chevronRight className='ml-auto transition-transform duration-200 group-data-panel-open/collapsible:rotate-90' />
                     </CollapsibleTrigger>
+
                     <CollapsibleContent>
                       <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
+                        {item.items.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
                               render={<Link href={subItem.url} aria-label={subItem.title} />}
@@ -111,6 +125,8 @@ export default function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      {/* User Menu */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -123,9 +139,23 @@ export default function AppSidebar() {
                   />
                 }
               >
-                {user && <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={user} />}
+                <div className='flex min-w-0 items-center gap-2'>
+                  <div className='flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted'>
+                    <Icons.account className='size-4' />
+                  </div>
+
+                  <div className='flex min-w-0 flex-col group-data-[collapsible=icon]:hidden'>
+                    <span className='truncate text-sm font-medium'>{user?.name ?? 'Guest'}</span>
+
+                    <span className='truncate text-xs text-muted-foreground'>
+                      {user?.role ?? 'Not signed in'}
+                    </span>
+                  </div>
+                </div>
+
                 <Icons.chevronsDown className='ml-auto size-4' />
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 className='w-(--anchor-width) min-w-56 rounded-lg'
                 side='bottom'
@@ -135,42 +165,50 @@ export default function AppSidebar() {
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className='p-0 font-normal'>
                     <div className='px-1 py-1.5'>
-                      {user && (
-                        <UserAvatarProfile className='h-8 w-8 rounded-lg' showInfo user={user} />
-                      )}
+                      <div className='flex flex-col space-y-1'>
+                        <p className='text-sm font-medium'>{user?.name ?? 'Guest'}</p>
+
+                        {user?.email && (
+                          <p className='text-xs text-muted-foreground'>{user.email}</p>
+                        )}
+
+                        {user?.role && (
+                          <p className='text-xs text-muted-foreground'>Role: {user.role}</p>
+                        )}
+                      </div>
                     </div>
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
+
                 <DropdownMenuSeparator />
 
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
-                    <Icons.account className='mr-2 h-4 w-4' />
-                    Profile
-                  </DropdownMenuItem>
-                  {organization && (
-                    <DropdownMenuItem onClick={() => router.push('/dashboard/billing')}>
-                      <Icons.creditCard className='mr-2 h-4 w-4' />
-                      Billing
+                  {user && (
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
+                      <Icons.account className='mr-2 h-4 w-4' />
+                      Profile
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={() => router.push('/dashboard/notifications')}>
-                    <Icons.notification className='mr-2 h-4 w-4' />
-                    Notifications
-                  </DropdownMenuItem>
                 </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/auth/sign-in' })}>
-                    <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
+
+                {user && (
+                  <>
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <Icons.logout aria-hidden className='mr-2 h-4 w-4' />
+                        Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );

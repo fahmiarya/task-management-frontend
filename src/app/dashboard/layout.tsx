@@ -4,13 +4,12 @@ import Header from '@/components/layout/header';
 import { InfoSidebar } from '@/components/layout/info-sidebar';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 export const metadata: Metadata = {
-  title: 'Next Shadcn Dashboard Starter',
-  description: 'Basic dashboard with Next.js and Shadcn',
+  title: 'Task Management App',
+  description: 'Task Management Application',
   robots: {
     index: false,
     follow: false
@@ -18,11 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Gate the whole /dashboard segment: redirect to sign-in when signed out.
-  await auth.protect();
-  // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
+
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
+
   return (
     <KBar>
       <SidebarProvider defaultOpen={defaultOpen}>
@@ -32,9 +30,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         >
           Skip to content
         </a>
+
         <AppSidebar />
+
         <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
           <Header />
+
           <InfobarProvider defaultOpen={false}>
             {children}
             <InfoSidebar side='right' />
