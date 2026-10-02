@@ -1,17 +1,23 @@
-'use client';
-
 import PageContainer from '@/components/layout/page-container';
-import { OrganizationProfile } from '@clerk/nextjs';
-import { teamInfoContent } from '@/config/infoconfig';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TeamPage() {
   return (
-    <PageContainer
-      pageTitle='Team Management'
-      pageDescription='Manage your workspace team, members, roles, security and more.'
-      infoContent={teamInfoContent}
-    >
-      <OrganizationProfile />
+    <PageContainer>
+      <Card>
+        <CardHeader>
+          <CardTitle>Team</CardTitle>
+          <CardDescription>
+            Team management will be handled by the Task Management API.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <p className='text-muted-foreground'>
+            Team management is currently being migrated from Clerk.
+          </p>
+        </CardContent>
+      </Card>
     </PageContainer>
   );
 }
